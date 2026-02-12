@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lunch Oracle</title>
+    <title>Lunch Oracle - Enhanced</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet">
@@ -19,6 +19,8 @@
             --text-primary: #FFFFFF;
             --text-secondary: rgba(255, 255, 255, 0.65);
             --text-muted: rgba(255, 255, 255, 0.35);
+            --success: #34D399;
+            --warning: #FBBF24;
         }
 
         * {
@@ -268,6 +270,7 @@
             overflow-y: auto;
             overflow-x: hidden;
             padding-right: 8px;
+            position: relative;
         }
 
         #list-container::-webkit-scrollbar {
@@ -288,6 +291,49 @@
             background: rgba(255, 255, 255, 0.25);
         }
 
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px 20px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 列表项 */
         .item {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -297,8 +343,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             animation: itemAppear 0.4s ease-out backwards;
+        }
+
+        .item.excluded {
+            opacity: 0.4;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .item.excluded .item-name {
+            text-decoration: line-through;
         }
 
         @keyframes itemAppear {
@@ -318,9 +374,89 @@
             transform: translateX(4px);
         }
 
-        .item span {
+        .item-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .item-name {
             color: var(--text-primary);
             font-size: 14px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .item-weight {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .weight-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .weight-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .weight-display {
+            min-width: 32px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .item-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .exclude-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--warning);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .exclude-btn:hover {
+            background: var(--warning);
+            color: var(--bg-start);
+            transform: scale(1.1);
+        }
+
+        .exclude-btn.active {
+            background: var(--warning);
+            color: var(--bg-start);
         }
 
         .del-btn {
@@ -344,6 +480,54 @@
             background: var(--primary);
             color: white;
             transform: rotate(90deg) scale(1.1);
+        }
+
+        /* 撤销通知 */
+        .undo-toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .undo-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .undo-toast-text {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .undo-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .undo-btn:hover {
+            background: var(--primary-light);
+            transform: scale(1.05);
         }
 
         /* 主舞台 */
@@ -556,6 +740,14 @@
                 margin-top: 20px;
             }
 
+            .item {
+                padding: 12px 14px;
+            }
+
+            .item-weight {
+                display: none;
+            }
+
             #main {
                 flex: 1;
                 padding: 32px 20px;
@@ -583,6 +775,11 @@
                 width: 140px;
                 height: 140px;
                 font-size: 24px;
+            }
+
+            .undo-toast {
+                bottom: 24px;
+                max-width: 90%;
             }
         }
 
@@ -670,13 +867,22 @@
         </div>
     </div>
 
+    <!-- 撤销提示 -->
+    <div class="undo-toast" id="undo-toast">
+        <span class="undo-toast-text" id="undo-text">已删除项目</span>
+        <button class="undo-btn" onclick="undoDelete()">撤销</button>
+    </div>
+
     <script>
-        let options = JSON.parse(localStorage.getItem('lunch_oracle_data')) || [];
+        // 数据结构：{ name: string, weight: number, excluded: boolean }
+        let options = JSON.parse(localStorage.getItem('lunch_oracle_enhanced')) || [];
         let isRolling = false;
         let timer = null;
+        let undoStack = null;
+        let undoTimer = null;
 
         function save() {
-            localStorage.setItem('lunch_oracle_data', JSON.stringify(options));
+            localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
             render();
         }
 
@@ -684,16 +890,45 @@
             const container = document.getElementById('list-container');
             const countDisplay = document.getElementById('item-count');
             
+            // 计算有效候选数（未排除的）
+            const activeCount = options.filter(opt => !opt.excluded).length;
+            countDisplay.textContent = activeCount;
+
+            if (options.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🍽️</div>
+                        <div class="empty-state-title">空空如也</div>
+                        <div class="empty-state-text">添加一些美食选项<br>让神谕为你做决定吧</div>
+                    </div>
+                `;
+                return;
+            }
+
             container.innerHTML = '';
-            countDisplay.textContent = options.length;
 
             options.forEach((item, index) => {
                 const div = document.createElement('div');
-                div.className = 'item';
-                div.style.animationDelay = `${index * 0.05}s`;
+                div.className = 'item' + (item.excluded ? ' excluded' : '');
+                div.style.animationDelay = `${index * 0.03}s`;
+                
                 div.innerHTML = `
-                    <span>${item}</span>
-                    <button class="del-btn" onclick="remove(${index})">×</button>
+                    <div class="item-content">
+                        <span class="item-name">${item.name}</span>
+                        <div class="item-weight">
+                            <button class="weight-btn" onclick="changeWeight(${index}, -1)">−</button>
+                            <span class="weight-display">×${item.weight || 1}</span>
+                            <button class="weight-btn" onclick="changeWeight(${index}, 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="exclude-btn ${item.excluded ? 'active' : ''}" 
+                                onclick="toggleExclude(${index})" 
+                                title="${item.excluded ? '恢复' : '今日不吃'}">
+                            ${item.excluded ? '✓' : '○'}
+                        </button>
+                        <button class="del-btn" onclick="removeItem(${index})">×</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
@@ -702,18 +937,80 @@
         const itemInput = document.getElementById('item-input');
         itemInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
-                options.unshift(e.target.value.trim());
+                const newItem = {
+                    name: e.target.value.trim(),
+                    weight: 1,
+                    excluded: false
+                };
+                options.unshift(newItem);
                 e.target.value = '';
                 save();
             }
         });
 
-        function remove(index) {
-            options.splice(index, 1);
+        function changeWeight(index, delta) {
+            const item = options[index];
+            const newWeight = Math.max(1, Math.min(5, (item.weight || 1) + delta));
+            options[index].weight = newWeight;
             save();
         }
 
+        function toggleExclude(index) {
+            options[index].excluded = !options[index].excluded;
+            save();
+        }
+
+        function removeItem(index) {
+            // 保存到撤销栈
+            undoStack = {
+                item: {...options[index]},
+                index: index
+            };
+
+            // 删除项目
+            const itemName = options[index].name;
+            options.splice(index, 1);
+            save();
+
+            // 显示撤销提示
+            showUndoToast(itemName);
+        }
+
+        function showUndoToast(itemName) {
+            const toast = document.getElementById('undo-toast');
+            const text = document.getElementById('undo-text');
+            
+            text.textContent = `已删除「${itemName}」`;
+            toast.classList.add('show');
+
+            // 清除之前的定时器
+            if (undoTimer) clearTimeout(undoTimer);
+
+            // 5秒后自动隐藏
+            undoTimer = setTimeout(() => {
+                toast.classList.remove('show');
+                undoStack = null;
+            }, 5000);
+        }
+
+        function undoDelete() {
+            if (!undoStack) return;
+
+            // 恢复项目
+            options.splice(undoStack.index, 0, undoStack.item);
+            save();
+
+            // 隐藏提示
+            const toast = document.getElementById('undo-toast');
+            toast.classList.remove('show');
+            undoStack = null;
+
+            if (undoTimer) clearTimeout(undoTimer);
+        }
+
         function clearAll() {
+            if (options.length === 0) return;
+            
             if (confirm('确定要清空所有选项吗？')) {
                 options = [];
                 save();
@@ -724,11 +1021,24 @@
             try {
                 const text = await navigator.clipboard.readText();
                 const items = text.split('\n').map(i => i.trim()).filter(i => i);
+                
                 if (items.length === 0) {
                     alert('剪贴板中没有找到有效内容');
                     return;
                 }
-                options = [...new Set([...items, ...options])];
+
+                // 转换为带权重的对象
+                const newItems = items.map(name => ({
+                    name: name,
+                    weight: 1,
+                    excluded: false
+                }));
+
+                // 去重合并
+                const existingNames = new Set(options.map(o => o.name));
+                const uniqueNewItems = newItems.filter(item => !existingNames.has(item.name));
+                
+                options = [...uniqueNewItems, ...options];
                 save();
             } catch (err) {
                 alert('请允许浏览器访问剪贴板权限');
@@ -778,12 +1088,16 @@
                 }, 600);
 
             } else {
-                let count = parseInt(countInput.value) || 1;
-                if (options.length === 0) {
-                    alert('候选池是空的！请先添加选项');
+                // 获取有效候选池（未排除的）
+                const activeOptions = options.filter(opt => !opt.excluded);
+                
+                if (activeOptions.length === 0) {
+                    alert('候选池是空的！请先添加选项或取消排除');
                     return;
                 }
-                count = Math.min(count, options.length);
+
+                let count = parseInt(countInput.value) || 1;
+                count = Math.min(count, activeOptions.length);
 
                 isRolling = true;
                 btn.innerText = 'STOP';
@@ -791,14 +1105,42 @@
                 res.classList.remove('active');
 
                 timer = setInterval(() => {
-                    let shuffled = [...options].sort(() => 0.5 - Math.random());
-                    let selected = shuffled.slice(0, count);
+                    // 加权随机抽取
+                    let selected = weightedRandomSelect(activeOptions, count);
                     let displayText = selected.join('\n');
 
                     res.innerText = displayText;
                     res.style.fontSize = getFontSize(displayText, count);
                 }, 50);
             }
+        }
+
+        // 加权随机抽取算法
+        function weightedRandomSelect(items, count) {
+            const result = [];
+            const available = [...items];
+
+            for (let i = 0; i < count && available.length > 0; i++) {
+                // 计算总权重
+                const totalWeight = available.reduce((sum, item) => sum + (item.weight || 1), 0);
+                
+                // 随机选择
+                let random = Math.random() * totalWeight;
+                let selectedIndex = 0;
+
+                for (let j = 0; j < available.length; j++) {
+                    random -= (available[j].weight || 1);
+                    if (random <= 0) {
+                        selectedIndex = j;
+                        break;
+                    }
+                }
+
+                result.push(available[selectedIndex].name);
+                available.splice(selectedIndex, 1);
+            }
+
+            return result;
         }
 
         // 窗口resize时重新计算字体
