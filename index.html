@@ -345,6 +345,10 @@
             align-items: center;
             gap: 12px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 只在初次加载时显示入场动画 */
+        .item.initial-load {
             animation: itemAppear 0.4s ease-out backwards;
         }
 
@@ -562,7 +566,7 @@
             letter-spacing: -2px;
             white-space: pre-wrap;
             word-break: break-word;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
+            background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -579,8 +583,8 @@
         }
 
         @keyframes glow {
-            0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.6)); }
-            50% { filter: drop-shadow(0 0 40px rgba(255, 107, 53, 0.9)); }
+            0%, 100% { filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.8)); }
+            50% { filter: drop-shadow(0 0 50px rgba(255, 107, 53, 1)); }
         }
 
         /* 控制面板 */
@@ -622,11 +626,51 @@
             font-family: 'Bricolage Grotesque', sans-serif;
             text-align: center;
             outline: none;
+            -moz-appearance: textfield; /* Firefox */
         }
 
+        /* 隐藏浏览器默认的上下箭头 */
         #count-input::-webkit-inner-spin-button,
         #count-input::-webkit-outer-spin-button {
-            opacity: 1;
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* 使用CSS自定义箭头 */
+        .count-selector {
+            position: relative;
+        }
+
+        .custom-arrows {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .arrow-btn {
+            width: 24px;
+            height: 20px;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            border-radius: 6px;
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .arrow-btn:hover {
+            background: rgba(255, 107, 53, 0.2);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .arrow-btn:active {
+            transform: scale(0.95);
         }
 
         /* 主按钮 */
@@ -860,6 +904,10 @@
                 <div class="count-selector">
                     <label>数量</label>
                     <input type="number" id="count-input" value="1" min="1">
+                    <div class="custom-arrows">
+                        <button class="arrow-btn" onclick="adjustCount(1)">▲</button>
+                        <button class="arrow-btn" onclick="adjustCount(-1)">▼</button>
+                    </div>
                 </div>
 
                 <button id="go-btn" class="btn" onclick="toggleRoll()">GO</button>
@@ -883,10 +931,16 @@
 
         function save() {
             localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
-            render();
+            updateCount(); // 只更新计数，不重新渲染整个列表
         }
 
-        function render() {
+        function updateCount() {
+            const countDisplay = document.getElementById('item-count');
+            const activeCount = options.filter(opt => !opt.excluded).length;
+            countDisplay.textContent = activeCount;
+        }
+
+        function render(showAnimation = false) {
             const container = document.getElementById('list-container');
             const countDisplay = document.getElementById('item-count');
             
@@ -909,8 +963,11 @@
 
             options.forEach((item, index) => {
                 const div = document.createElement('div');
-                div.className = 'item' + (item.excluded ? ' excluded' : '');
-                div.style.animationDelay = `${index * 0.03}s`;
+                div.className = 'item' + (item.excluded ? ' excluded' : '') + (showAnimation ? ' initial-load' : '');
+                if (showAnimation) {
+                    div.style.animationDelay = `${index * 0.03}s`;
+                }
+                div.setAttribute('data-index', index);
                 
                 div.innerHTML = `
                     <div class="item-content">
@@ -934,6 +991,32 @@
             });
         }
 
+        // 局部更新单个项目
+        function updateItem(index) {
+            const container = document.getElementById('list-container');
+            const itemElement = container.querySelector(`[data-index="${index}"]`);
+            if (!itemElement) return;
+
+            const item = options[index];
+            
+            // 更新类名
+            itemElement.className = 'item' + (item.excluded ? ' excluded' : '');
+            
+            // 更新权重显示
+            const weightDisplay = itemElement.querySelector('.weight-display');
+            if (weightDisplay) {
+                weightDisplay.textContent = `×${item.weight || 1}`;
+            }
+            
+            // 更新排除按钮
+            const excludeBtn = itemElement.querySelector('.exclude-btn');
+            if (excludeBtn) {
+                excludeBtn.className = 'exclude-btn' + (item.excluded ? ' active' : '');
+                excludeBtn.innerHTML = item.excluded ? '✓' : '○';
+                excludeBtn.title = item.excluded ? '恢复' : '今日不吃';
+            }
+        }
+
         const itemInput = document.getElementById('item-input');
         itemInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
@@ -944,7 +1027,8 @@
                 };
                 options.unshift(newItem);
                 e.target.value = '';
-                save();
+                localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
+                render(true); // 显示动画
             }
         });
 
@@ -952,12 +1036,15 @@
             const item = options[index];
             const newWeight = Math.max(1, Math.min(5, (item.weight || 1) + delta));
             options[index].weight = newWeight;
-            save();
+            localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
+            updateItem(index); // 只更新这一项
         }
 
         function toggleExclude(index) {
             options[index].excluded = !options[index].excluded;
-            save();
+            localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
+            updateItem(index); // 只更新这一项
+            updateCount(); // 更新计数
         }
 
         function removeItem(index) {
@@ -970,7 +1057,8 @@
             // 删除项目
             const itemName = options[index].name;
             options.splice(index, 1);
-            save();
+            localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
+            render(); // 删除时重新渲染，但不显示动画
 
             // 显示撤销提示
             showUndoToast(itemName);
@@ -998,7 +1086,8 @@
 
             // 恢复项目
             options.splice(undoStack.index, 0, undoStack.item);
-            save();
+            localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
+            render(true); // 恢复时显示动画
 
             // 隐藏提示
             const toast = document.getElementById('undo-toast');
@@ -1013,7 +1102,8 @@
             
             if (confirm('确定要清空所有选项吗？')) {
                 options = [];
-                save();
+                localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
+                render();
             }
         }
 
@@ -1039,7 +1129,8 @@
                 const uniqueNewItems = newItems.filter(item => !existingNames.has(item.name));
                 
                 options = [...uniqueNewItems, ...options];
-                save();
+                localStorage.setItem('lunch_oracle_enhanced', JSON.stringify(options));
+                render(true); // 导入时显示动画
             } catch (err) {
                 alert('请允许浏览器访问剪贴板权限');
             }
@@ -1077,15 +1168,23 @@
                 isRolling = false;
                 btn.innerText = 'GO';
                 btn.classList.remove('active');
+                
+                // 停止后使用加权随机算法计算最终结果
+                const activeOptions = options.filter(opt => !opt.excluded);
+                let count = parseInt(countInput.value) || 1;
+                count = Math.min(count, activeOptions.length);
+                
+                let finalSelected = weightedRandomSelect(activeOptions, count);
+                let displayText = finalSelected.join('\n');
+                res.innerText = displayText;
+                res.style.fontSize = getFontSize(displayText, count);
+                
+                // 保持橙色高亮状态
                 res.classList.add('active');
                 
                 if (window.navigator.vibrate) {
                     window.navigator.vibrate([50, 30, 50]);
                 }
-
-                setTimeout(() => {
-                    res.classList.remove('active');
-                }, 600);
 
             } else {
                 // 获取有效候选池（未排除的）
@@ -1102,13 +1201,21 @@
                 isRolling = true;
                 btn.innerText = 'STOP';
                 btn.classList.add('active');
+                // 开始滚动时移除橙色，使用灰色
                 res.classList.remove('active');
 
                 timer = setInterval(() => {
-                    // 加权随机抽取
-                    let selected = weightedRandomSelect(activeOptions, count);
-                    let displayText = selected.join('\n');
-
+                    // 滚动过程中：完全混乱随机，不考虑权重
+                    let tempSelected = [];
+                    let tempPool = [...activeOptions];
+                    
+                    for (let i = 0; i < count && tempPool.length > 0; i++) {
+                        const randomIndex = Math.floor(Math.random() * tempPool.length);
+                        tempSelected.push(tempPool[randomIndex].name);
+                        tempPool.splice(randomIndex, 1);
+                    }
+                    
+                    let displayText = tempSelected.join('\n');
                     res.innerText = displayText;
                     res.style.fontSize = getFontSize(displayText, count);
                 }, 50);
@@ -1143,6 +1250,15 @@
             return result;
         }
 
+        // 调整数量
+        function adjustCount(delta) {
+            const input = document.getElementById('count-input');
+            const activeCount = options.filter(opt => !opt.excluded).length;
+            const currentValue = parseInt(input.value) || 1;
+            const newValue = Math.max(1, Math.min(activeCount || 999, currentValue + delta));
+            input.value = newValue;
+        }
+
         // 窗口resize时重新计算字体
         let resizeTimer;
         window.addEventListener('resize', () => {
@@ -1158,7 +1274,7 @@
         });
 
         // 初始化
-        render();
+        render(true);
     </script>
 </body>
 </html>
