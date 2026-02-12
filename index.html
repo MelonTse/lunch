@@ -15,7 +15,7 @@
         }
 
         body {
-            font-family: "DengXian", "Segoe UI", sans-serif;
+            font-family: -apple-system, "DengXian", "Segoe UI", sans-serif;
             background-color: var(--apple-bg);
             color: var(--apple-text);
             margin: 0;
@@ -24,118 +24,120 @@
             overflow: hidden;
         }
 
-        /* 侧边栏保持不变 */
+        /* --- 响应式布局核心 --- */
         #sidebar {
             width: 320px;
             background: var(--apple-card);
             border-right: 1px solid #D2D2D7;
             display: flex;
             flex-direction: column;
-            padding: 40px 20px;
+            padding: 30px 20px;
             box-sizing: border-box;
+            transition: all 0.3s ease;
             z-index: 10;
         }
 
-        h1 { font-size: 28px; margin: 0; font-weight: 700; }
-        .subtitle { color: var(--apple-blue); font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 30px; }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: none;
-            background: var(--apple-bg);
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            outline: none;
-            font-family: "DengXian";
-        }
-
-        .btn { cursor: pointer; border-radius: 12px; border: none; transition: all 0.2s; font-family: "DengXian"; }
-        .btn-secondary { background: var(--apple-bg); color: var(--apple-text); padding: 10px; margin-bottom: 5px; width: 100%; font-size: 13px; }
-
-        .list-header { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 5px; }
-        .list-header span { font-size: 12px; color: var(--apple-gray); font-weight: bold; }
-        .btn-clear { color: var(--apple-red); font-size: 12px; background: none; font-weight: bold; }
-
-        #list-container { flex-grow: 1; overflow-y: auto; margin-top: 10px; }
-        .item { 
-            background: var(--apple-bg); padding: 10px 15px; border-radius: 10px; 
-            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .del-btn { color: #C7C7CC; cursor: pointer; font-size: 18px; line-height: 1; }
-
-        /* 主舞台优化：解决跳动 */
         #main {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center; /* 垂直居中所有内容 */
+            justify-content: center;
+            padding: 20px;
+            background-color: var(--apple-bg);
             position: relative;
         }
 
-        /* 固定高度的结果容器，防止跳动 */
+        /* 手机端布局重构 */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #sidebar { 
+                width: 100%; 
+                height: 50vh; /* 侧边栏/名单池占上半截 */
+                border-right: none; 
+                border-bottom: 1px solid #D2D2D7;
+                padding: 15px;
+            }
+            #main { 
+                height: 50vh; /* 抽取区占下半截 */
+                padding: 10px;
+                justify-content: flex-start; /* 让内容靠上一点，给虚拟按键留位置 */
+                padding-top: 20px;
+            }
+            #result-container { height: 140px !important; } /* 缩小结果框高度 */
+            #result { font-size: 42px !important; }
+            #go-btn { width: 85% !important; height: 60px !important; margin-top: 10px; }
+            .config-pill { margin-bottom: 15px !important; }
+            h1 { font-size: 20px !important; }
+        }
+
+        /* --- 内部组件样式 --- */
+        h1 { font-size: 24px; margin: 0; font-weight: 700; }
+        .subtitle { color: var(--apple-blue); font-size: 10px; font-weight: 800; letter-spacing: 1px; margin-bottom: 15px; }
+
+        input {
+            width: 100%; padding: 12px; border-radius: 12px; border: none;
+            background: var(--apple-bg); margin-bottom: 8px; box-sizing: border-box;
+            outline: none; font-size: 14px;
+        }
+
+        .btn { cursor: pointer; border-radius: 12px; border: none; transition: all 0.2s; font-weight: 600; }
+        .btn-secondary { background: var(--apple-bg); color: var(--apple-text); padding: 10px; margin-bottom: 5px; width: 100%; font-size: 13px; }
+
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 0 5px; }
+        .list-header span { font-size: 12px; color: var(--apple-gray); font-weight: bold; }
+        .btn-clear { color: var(--apple-red); font-size: 12px; background: none; padding: 0; }
+
+        #list-container { flex-grow: 1; overflow-y: auto; margin-top: 8px; }
+        .item { 
+            background: var(--apple-bg); padding: 8px 12px; border-radius: 8px; 
+            margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 14px;
+        }
+        .del-btn { color: #C7C7CC; cursor: pointer; font-size: 18px; line-height: 1; }
+
+        /* 抽取结果展示区 */
         #result-container {
-            height: 300px;
+            height: 220px;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 90%;
+            width: 100%;
             text-align: center;
         }
 
         #result {
-            font-size: 82px;
+            font-size: 72px;
             font-weight: 800;
-            color: #E8E8ED;
-            line-height: 1.1;
-            white-space: pre-wrap; /* 支持换行显示多个结果 */
+            color: #D2D2D7;
+            line-height: 1.2;
+            word-break: break-all;
             transition: color 0.3s;
         }
 
-        /* 数量设置器 - 胶囊设计 */
+        /* 数量设置器 */
         .config-pill {
             background: white;
-            padding: 5px 15px;
-            border-radius: 20px;
+            padding: 6px 18px;
+            border-radius: 25px;
             display: flex;
             align-items: center;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .config-pill label { font-size: 12px; color: var(--apple-gray); font-weight: bold; margin-right: 10px; }
+        .config-pill label { font-size: 13px; color: var(--apple-gray); margin-right: 12px; font-weight: 600; }
         #count-input {
-            width: 40px;
-            background: none;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--apple-blue);
+            width: 40px; background: none; margin: 0; padding: 0;
+            text-align: center; font-size: 18px; font-weight: 800; color: var(--apple-blue);
         }
 
         #go-btn {
-            width: 260px;
-            height: 72px;
-            background: #1D1D1F;
-            color: white;
-            font-size: 22px;
-            font-weight: bold;
-            border-radius: 36px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 240px; height: 68px; background: #1D1D1F; color: white;
+            font-size: 20px; border-radius: 34px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
+        #go-btn:active { transform: scale(0.95); }
         #go-btn.active { background: var(--apple-red); }
 
-        /* 响应式适配 */
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            #sidebar { width: 100%; height: 40%; border-right: none; }
-            #main { flex-grow: 1; justify-content: center; }
-            #result-container { height: 200px; }
-            #result { font-size: 50px; }
-        }
     </style>
 </head>
 <body>
@@ -144,7 +146,7 @@
     <h1>Lunch</h1>
     <div class="subtitle">TERMINATOR PRO</div>
     
-    <input type="text" id="item-input" placeholder="添加候选项...">
+    <input type="text" id="item-input" placeholder="输入候选项并回车...">
     <button class="btn btn-secondary" onclick="importFromClipboard()">📋 从剪贴板粘贴</button>
 
     <div class="list-header">
@@ -162,7 +164,7 @@
 
     <div class="config-pill">
         <label>抽取数量</label>
-        <input type="number" id="count-input" value="1" min="1">
+        <input type="number" id="count-input" value="1" min="1" max="10">
     </div>
 
     <button id="go-btn" class="btn" onclick="toggleRoll()">GO</button>
@@ -203,7 +205,7 @@
     }
 
     function clearAll() {
-        if(confirm('确定要清空所有选项吗？')) {
+        if(confirm('确定要清空名单吗？')) {
             options = [];
             save();
         }
@@ -212,18 +214,10 @@
     async function importFromClipboard() {
         try {
             const text = await navigator.clipboard.readText();
-            const items = text.split('\n').map(i => i.trim()).filter(i => i);
+            const items = text.split(/[\n,， ]+/).map(i => i.trim()).filter(i => i);
             options = [...new Set([...items, ...options])];
             save();
-        } catch (err) { alert('请允许浏览器访问剪贴板'); }
-    }
-
-    // 动态字号计算函数
-    function getFontSize(text, count) {
-        if (count > 1) return '32px';
-        if (text.length > 8) return '36px';
-        if (text.length > 5) return '54px';
-        return '82px';
+        } catch (err) { alert('请允许访问剪贴板'); }
     }
 
     function toggleRoll() {
@@ -237,10 +231,10 @@
             btn.innerText = 'GO';
             btn.classList.remove('active');
             res.style.color = 'var(--apple-blue)';
-            if (window.navigator.vibrate) window.navigator.vibrate(50);
+            if (window.navigator.vibrate) window.navigator.vibrate(40);
         } else {
             let count = parseInt(countInput.value) || 1;
-            if (options.length === 0) return alert('名单池是空的！');
+            if (options.length === 0) return alert('请先添加候选项');
             count = Math.min(count, options.length);
             
             isRolling = true;
@@ -249,13 +243,17 @@
             res.style.color = '#D2D2D7';
 
             timer = setInterval(() => {
-                // 随机抽取指定数量且不重复
                 let shuffled = [...options].sort(() => 0.5 - Math.random());
                 let selected = shuffled.slice(0, count);
                 let displayText = selected.join('\n');
-                
                 res.innerText = displayText;
-                res.style.fontSize = getFontSize(displayText, count);
+                
+                // 自动计算字号
+                let isMobile = window.innerWidth < 768;
+                let baseSize = isMobile ? 42 : 72;
+                if (count > 1) baseSize = baseSize * 0.7;
+                if (displayText.length > 8) baseSize = baseSize * 0.8;
+                res.style.fontSize = baseSize + 'px';
             }, 50);
         }
     }
