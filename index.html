@@ -7,6 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF6B35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="午餐先知">
     <style>
         :root {
             --primary: #FF6B35;
@@ -922,6 +927,12 @@
     </div>
 
     <script>
+        // 请确保这段代码在你的 <script> 标签开头
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+    });
+}
         // 数据结构：{ name: string, weight: number, excluded: boolean }
         let options = JSON.parse(localStorage.getItem('lunch_oracle_enhanced')) || [];
         let isRolling = false;
